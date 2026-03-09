@@ -2,6 +2,21 @@ import { useState, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { MicronetNode } from '../types';
 
+const COLORS = ['Red', 'Blue', 'Green', 'Yellow', 'Purple', 'Orange', 'Cyan', 'Magenta', 'Crimson', 'Cobalt', 'Emerald', 'Amber'];
+const VERBS = ['Running', 'Jumping', 'Flying', 'Swimming', 'Crawling', 'Falling', 'Rising', 'Spinning', 'Glowing', 'Fading', 'Pulsing', 'Echoing'];
+const NOUNS = ['Fox', 'Bear', 'Wolf', 'Eagle', 'Shark', 'Lion', 'Tiger', 'Hawk', 'Owl', 'Snake', 'Dragon', 'Phoenix'];
+
+export function generateNodeName(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const c = COLORS[Math.abs(hash) % COLORS.length];
+  const v = VERBS[Math.abs(hash >> 8) % VERBS.length];
+  const n = NOUNS[Math.abs(hash >> 16) % NOUNS.length];
+  return `${c}-${v}-${n}`;
+}
+
 export function useMicronet(socket: Socket | null, userId: string, props: {
   isMicronetActive: boolean;
   setIsMicronetActive: (v: boolean) => void;
@@ -48,7 +63,8 @@ export function useMicronet(socket: Socket | null, userId: string, props: {
         optionalServices: ['battery_service', 'device_information']
       });
 
-      const name = device.name || "Unknown Node";
+      const rawName = device.name || "Unknown Node";
+      const name = generateNodeName(rawName);
       setMicronetDevice(name);
       setIsMicronetActive(true);
       localStorage.setItem('nownet_micronetDevice', name);
@@ -91,7 +107,8 @@ export function useMicronet(socket: Socket | null, userId: string, props: {
         optionalServices: ['battery_service']
       });
 
-      const discoveredName = device.name || "Unknown";
+      const rawName = device.name || "Unknown";
+      const discoveredName = generateNodeName(rawName);
       
       if (socket) {
         socket.emit('micronet_lookup', { deviceNames: [discoveredName] }, (users: MicronetNode[]) => {

@@ -87,7 +87,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0a] text-[#00ff41] font-mono relative overflow-hidden">
+    <div className="h-[100dvh] flex flex-col bg-[#0a0a0a] text-[#00ff41] font-mono relative overflow-hidden">
       <div className="scanline" />
       
       <Header 

@@ -62,7 +62,7 @@ async function startServer() {
     },
   });
 
-  const PORT = 3000;
+  const PORT = parseInt(process.env.PORT || "3000", 10);
 
   // Daily Wipe Logic
   function wipeNoticeboard() {
@@ -127,8 +127,16 @@ async function startServer() {
   });
 
   // Micronet Node Tracking
-  const micronetNodes = new Map<string, { userId: string; deviceName: string; handle?: string }>();
+  const micronetNodes = new Map<string, { userId: string; deviceName: string; handle?: string; signalStrength: number }>();
   const userSocketCounts = new Map<string, number>();
+
+  function getSignalStrength(userId: string) {
+    let hash = 0;
+    for (let i = 0; i < userId.length; i++) {
+      hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return -Math.abs(hash % 50) - 40; // -40 to -89 dBm
+  }
 
   // Socket.io logic
   io.on("connection", (socket) => {
@@ -148,7 +156,7 @@ async function startServer() {
       const identity = isMicronet && deviceName ? deviceName : "UNANCHORED";
       
       if (isMicronet && deviceName) {
-        micronetNodes.set(socket.id, { userId: socketUserId, deviceName, handle: socketHandle });
+        micronetNodes.set(socket.id, { userId: socketUserId, deviceName, handle: socketHandle, signalStrength: getSignalStrength(socketUserId) });
         io.emit("micronet_node_update", Array.from(micronetNodes.values()));
       }
 
@@ -174,7 +182,7 @@ async function startServer() {
     });
 
     socket.on("micronet_register", (data: { deviceName: string; handle?: string }) => {
-      micronetNodes.set(socket.id, { userId: socketUserId, deviceName: data.deviceName, handle: data.handle || socketHandle });
+      micronetNodes.set(socket.id, { userId: socketUserId, deviceName: data.deviceName, handle: data.handle || socketHandle, signalStrength: getSignalStrength(socketUserId) });
       io.emit("micronet_node_update", Array.from(micronetNodes.values()));
     });
 

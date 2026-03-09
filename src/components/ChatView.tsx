@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { MessageSquare, Shield, Globe, Send } from 'lucide-react';
+import { MessageSquare, Shield, Globe, Send, Radar } from 'lucide-react';
 import { View, MicronetNode } from '../types';
 
 interface ChatViewProps {
@@ -31,7 +31,7 @@ export function ChatView({
   const [showPresence, setShowPresence] = useState(false);
 
   return (
-    <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full flex flex-col lg:flex-row gap-4 lg:gap-6 max-w-6xl mx-auto relative p-4 sm:p-6 overflow-hidden">
+    <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full w-full flex flex-col lg:flex-row gap-4 lg:gap-6 max-w-6xl mx-auto relative p-4 sm:p-6 overflow-hidden">
       {/* Left Column: Chat */}
       <div className="flex-1 flex flex-col min-h-0">
         <div className="flex flex-col mb-4 border-b border-[#00ff41]/30 pb-3 gap-3 flex-shrink-0">
@@ -43,7 +43,7 @@ export function ChatView({
               onClick={() => setShowPresence(!showPresence)}
               className="lg:hidden text-[10px] px-3 py-1 border border-[#00ff41] font-bold uppercase tracking-widest active:bg-[#00ff41] active:text-black transition-colors"
             >
-              {showPresence ? 'CLOSE_RADAR' : `RADAR (${nearbyUsers.length})`}
+              {showPresence ? 'CLOSE_RADAR' : `RADAR (${allNodes.filter(n => n.userId !== userId).length})`}
             </button>
           </div>
           
@@ -116,7 +116,7 @@ export function ChatView({
           )}
         </div>
 
-        <form onSubmit={onSendMessage} className="flex flex-col gap-2 mb-4 flex-shrink-0">
+        <form onSubmit={onSendMessage} className="flex flex-col gap-2 flex-shrink-0">
           {whisperTo && (
             <div className="flex items-center justify-between bg-purple-500/20 border border-purple-500/40 p-3 text-[10px] uppercase tracking-widest">
               <span>Whispering to: NODE_{whisperTo.userId.slice(0,6)}</span>
@@ -148,58 +148,54 @@ export function ChatView({
           <button onClick={() => setShowPresence(false)} className="p-2 border border-[#00ff41] text-[#00ff41]">CLOSE</button>
         </div>
 
-        <div className="border border-[#00ff41]/30 p-4 bg-[#00ff41]/5">
+        <div className="border border-[#00ff41]/30 p-4 bg-black/20 flex-1 lg:flex-none">
           <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 border-b border-[#00ff41]/20 pb-2 flex items-center justify-between">
-            Nearby_Nodes <span className="bg-[#00ff41] text-black px-1 rounded-sm">{nearbyUsers.length}</span>
+            Network_Presence <span className="bg-[#00ff41] text-black px-1 rounded-sm">{allNodes.filter(n => n.userId !== userId).length}</span>
           </h3>
-          <div className="space-y-3 overflow-y-auto lg:max-h-none">
-            {nearbyUsers.length === 0 ? (
-              <div className="text-[10px] opacity-40 italic leading-relaxed">No nodes detected in immediate vicinity. Use SCAN to discover local peers.</div>
+          <div className="space-y-2 overflow-y-auto lg:max-h-[calc(100vh-12rem)]">
+            {allNodes.filter(n => n.userId !== userId).length === 0 ? (
+              <div className="text-[10px] opacity-40 italic leading-relaxed">No other nodes detected on the global relay.</div>
             ) : (
-              nearbyUsers.map(node => (
-                <button 
-                  key={node.userId} 
-                  onClick={() => {
-                    setWhisperTo({ userId: node.userId });
-                    setShowPresence(false);
-                  }}
-                  className="w-full flex items-center justify-between group hover:bg-[#00ff41]/10 p-2 border border-transparent hover:border-[#00ff41]/30 transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-[#00ff41] rounded-full animate-pulse shadow-[0_0_8px_#00ff41]" />
-                    <div className="flex flex-col text-left">
-                      <span className="text-xs font-bold uppercase tracking-wider">NODE_{node.userId.slice(0,6)}</span>
-                      <span className="text-[8px] opacity-40">{node.deviceName}</span>
+              [...allNodes]
+                .filter(n => n.userId !== userId)
+                .sort((a, b) => (b.signalStrength || -100) - (a.signalStrength || -100))
+                .map(node => {
+                const isNearby = nearbyUsers.some(nu => nu.userId === node.userId);
+                return (
+                  <button 
+                    key={node.userId} 
+                    onClick={() => {
+                      setWhisperTo({ userId: node.userId });
+                      setShowPresence(false);
+                    }}
+                    className={`w-full flex items-center justify-between group p-2 border transition-all ${
+                      isNearby 
+                        ? 'bg-[#00ff41]/10 border-[#00ff41]/30 hover:bg-[#00ff41]/20 hover:border-[#00ff41]/50' 
+                        : 'border-transparent opacity-60 hover:opacity-100 hover:bg-[#00ff41]/5 hover:border-[#00ff41]/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {isNearby ? (
+                        <Radar className="w-4 h-4 text-[#00ff41] animate-pulse" />
+                      ) : (
+                        <div className="w-1.5 h-1.5 border border-[#00ff41] rounded-full ml-1" />
+                      )}
+                      <div className="flex flex-col text-left">
+                        <span className={`text-xs uppercase tracking-tight ${isNearby ? 'font-bold text-[#00ff41]' : ''}`}>
+                          NODE_{node.userId.slice(0,6)}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[8px] opacity-40">{node.deviceName}</span>
+                          {node.signalStrength && (
+                            <span className="text-[8px] text-[#00ff41] opacity-60">[{node.signalStrength} dBm]</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <MessageSquare className="w-4 h-4 opacity-30 group-hover:opacity-100 text-[#00ff41]" />
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="border border-[#00ff41]/10 p-4 bg-black/20 flex-1 lg:flex-none">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 border-b border-[#00ff41]/10 pb-2">Network_Presence</h3>
-          <div className="space-y-2 overflow-y-auto lg:max-h-64">
-            {allNodes.filter(n => !nearbyUsers.some(nu => nu.userId === n.userId) && n.userId !== userId).map(node => (
-              <button 
-                key={node.userId} 
-                onClick={() => {
-                  setWhisperTo({ userId: node.userId });
-                  setShowPresence(false);
-                }}
-                className="w-full flex items-center gap-3 opacity-60 hover:opacity-100 hover:bg-[#00ff41]/5 p-2 transition-colors border border-transparent hover:border-[#00ff41]/10"
-              >
-                <div className="w-1.5 h-1.5 border border-[#00ff41] rounded-full" />
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] uppercase tracking-tight">NODE_{node.userId.slice(0,6)}</span>
-                  <span className="text-[8px] opacity-30">{node.deviceName}</span>
-                </div>
-              </button>
-            ))}
-            {allNodes.length <= 1 && nearbyUsers.length === 0 && (
-              <div className="text-[10px] opacity-20 italic">No other nodes detected on the global relay.</div>
+                    <MessageSquare className={`w-4 h-4 opacity-30 group-hover:opacity-100 ${isNearby ? 'text-[#00ff41]' : ''}`} />
+                  </button>
+                );
+              })
             )}
           </div>
         </div>

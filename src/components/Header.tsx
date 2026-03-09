@@ -12,7 +12,7 @@ interface HeaderProps {
 
 export function Header({ view, setView, userId, isMicronetActive, micronetDevice }: HeaderProps) {
   return (
-    <header className="border-b-2 border-[#00ff41] p-3 sm:p-4 flex items-center justify-between bg-black z-20 shadow-[0_2px_10px_rgba(0,255,65,0.1)]">
+    <header className="flex-shrink-0 border-b-2 border-[#00ff41] p-3 sm:p-4 flex items-center justify-between bg-black z-20 shadow-[0_2px_10px_rgba(0,255,65,0.1)]">
       <div className="flex items-center gap-2">
         <Globe className="w-5 h-5 animate-pulse" />
         <span className="font-black tracking-tighter text-base sm:text-lg truncate max-w-[140px] sm:max-w-none uppercase">NOWNET</span>

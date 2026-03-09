@@ -54,7 +54,7 @@ export function NoticeboardView({
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         exit={{ opacity: 0 }} 
-        className="h-full overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-[#00ff41]/20"
+        className="h-full w-full overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-[#00ff41]/20"
       >
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6 border-b border-[#00ff41]/30 pb-2">
@@ -92,7 +92,7 @@ export function NoticeboardView({
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         exit={{ opacity: 0 }} 
-        className="h-full overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-[#00ff41]/20"
+        className="h-full w-full overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-[#00ff41]/20"
       >
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col mb-6 border-b border-[#00ff41]/30 pb-4 gap-4">
@@ -157,8 +157,8 @@ export function NoticeboardView({
                     {thread.title}
                   </div>
                   <div className="flex items-center justify-between w-full text-[10px] uppercase tracking-wider">
-                    <div className={`flex items-center gap-1 ${isNearby ? 'text-[#00ff41] font-bold' : 'opacity-50'}`}>
-                      BY NODE_{authorId.slice(0,6)} {isNearby && '(NEARBY)'}
+                    <div className={`flex items-center gap-1 ${isNearby ? 'text-[#00ff41] font-bold drop-shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'opacity-50'}`}>
+                      BY NODE_{authorId.slice(0,6)} {isNearby && <Globe className="w-3 h-3 animate-pulse" />}
                     </div>
                     <div className="opacity-40 font-mono">{thread.post_count} POSTS</div>
                   </div>
@@ -183,7 +183,7 @@ export function NoticeboardView({
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         exit={{ opacity: 0 }} 
-        className="h-full overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-[#00ff41]/20"
+        className="h-full w-full overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-[#00ff41]/20"
       >
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-6 border-b border-[#00ff41]/30 pb-4">
@@ -204,9 +204,9 @@ export function NoticeboardView({
                 <div key={post.id} className={`border ${isNearby ? 'border-[#00ff41] bg-[#00ff41]/5' : 'border-[#00ff41]/20'} p-4 relative`}>
                   <div className="flex flex-col mb-3 border-b border-[#00ff41]/10 pb-2 text-[10px] uppercase tracking-wider gap-1">
                     <div className="flex items-center justify-between">
-                      <div className={`flex items-center gap-2 ${isNearby ? 'text-[#00ff41] font-bold' : 'opacity-60'}`}>
+                      <div className={`flex items-center gap-2 ${isNearby ? 'text-[#00ff41] font-bold drop-shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'opacity-60'}`}>
                         FROM: NODE_{authorId.slice(0,6)} 
-                        {isNearby && <Globe className="w-3 h-3" />}
+                        {isNearby && <Globe className="w-3 h-3 animate-pulse" />}
                       </div>
                       <div className="opacity-40">{new Date(post.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                     </div>

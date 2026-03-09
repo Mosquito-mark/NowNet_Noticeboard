@@ -24,6 +24,7 @@ export interface Post {
 export interface MicronetNode {
   userId: string;
   deviceName: string;
+  signalStrength?: number;
 }
 
 export type View = 'groups' | 'threads' | 'post' | 'chat' | 'help';
