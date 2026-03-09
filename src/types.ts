@@ -10,6 +10,7 @@ export interface Thread {
   title: string;
   author: string;
   created_at: string;
+  uptime_at_post?: number;
   post_count?: number;
 }
 
@@ -19,12 +20,14 @@ export interface Post {
   author: string;
   content: string;
   created_at: string;
+  uptime_at_post?: number;
 }
 
 export interface MicronetNode {
   userId: string;
   deviceName: string;
   signalStrength?: number;
+  connectedAt?: number;
 }
 
 export type View = 'groups' | 'threads' | 'post' | 'chat' | 'help';

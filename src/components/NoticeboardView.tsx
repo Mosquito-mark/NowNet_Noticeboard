@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { BookOpen, AlertCircle, ChevronRight, ArrowLeft, Plus, Globe } from 'lucide-react';
+import { BookOpen, AlertCircle, ChevronRight, ArrowLeft, Plus, Globe, Clock, Hash } from 'lucide-react';
 import { Group, Thread, Post, View, MicronetNode } from '../types';
+import { formatUptime, formatDuration } from '../utils/time';
+import { generateSigil } from '../utils/sigil';
 
 interface NoticeboardViewProps {
   view: View;
@@ -26,25 +28,38 @@ export function NoticeboardView({
   countdown, nearbyUsers, allNodes
 }: NoticeboardViewProps) {
   const [isPosting, setIsPosting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 30000); // Update every 30s
+    return () => clearInterval(timer);
+  }, []);
 
   const handleCreateThread = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     const success = await onCreateThread(newThreadTitle, newPostContent);
     if (success) {
       setNewThreadTitle('');
       setNewPostContent('');
       setIsPosting(false);
     }
+    setTimeout(() => setIsSubmitting(false), 5000);
   };
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     const success = await onCreatePost(newPostContent);
     if (success) {
       setNewPostContent('');
     }
+    setTimeout(() => setIsSubmitting(false), 5000);
   };
 
   if (view === 'groups') {
@@ -126,6 +141,7 @@ export function NoticeboardView({
                   onChange={(e) => setNewThreadTitle(e.target.value)}
                   className="w-full bg-black border border-[#00ff41]/30 p-3 focus:outline-none focus:border-[#00ff41] text-sm"
                   required
+                  maxLength={150}
                 />
               </div>
               <div className="space-y-1">
@@ -136,15 +152,23 @@ export function NoticeboardView({
                   onChange={(e) => setNewPostContent(e.target.value)}
                   className="w-full bg-black border border-[#00ff41]/30 p-3 h-40 focus:outline-none focus:border-[#00ff41] text-sm"
                   required
+                  maxLength={500}
                 />
               </div>
-              <button type="submit" className="w-full bg-[#00ff41] text-black py-3 font-bold text-xs tracking-[0.2em] uppercase active:scale-95">Transmit_Article</button>
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="w-full bg-[#00ff41] text-black py-3 font-bold text-xs tracking-[0.2em] uppercase active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'TRANSMITTING...' : 'Transmit_Article'}
+              </button>
             </form>
           )}
 
           <div className="space-y-3">
             {threads.map(thread => {
               const authorId = thread.author.replace('NODE_', '');
+              const onlineNode = allNodes.find(n => n.userId === authorId);
               const isNearby = nearbyUsers.some(u => u.userId === authorId);
               return (
                 <button
@@ -157,8 +181,21 @@ export function NoticeboardView({
                     {thread.title}
                   </div>
                   <div className="flex items-center justify-between w-full text-[10px] uppercase tracking-wider">
-                    <div className={`flex items-center gap-1 ${isNearby ? 'text-[#00ff41] font-bold drop-shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'opacity-50'}`}>
-                      BY NODE_{authorId.slice(0,6)} {isNearby && <Globe className="w-3 h-3 animate-pulse" />}
+                    <div className="flex items-center gap-3">
+                      <div className={`flex items-center gap-2 ${isNearby ? 'text-[#00ff41] font-bold drop-shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'opacity-50'}`}>
+                        <span className="text-[#00ff41] font-mono opacity-40 text-[8px]">{generateSigil(authorId)}</span>
+                        BY NODE_{authorId.slice(0,6)} {isNearby && <Globe className="w-3 h-3 animate-pulse" />}
+                      </div>
+                      {onlineNode?.connectedAt && (
+                        <div className="opacity-30 flex items-center gap-1 text-[8px] bg-black/20 px-1 rounded">
+                          <Clock className="w-2 h-2" /> {formatUptime(onlineNode.connectedAt)}
+                        </div>
+                      )}
+                      {thread.uptime_at_post !== undefined && (
+                        <div className="opacity-20 flex items-center gap-1 text-[8px]">
+                          <Hash className="w-2 h-2" /> POSTED_AT: {formatDuration(thread.uptime_at_post)}
+                        </div>
+                      )}
                     </div>
                     <div className="opacity-40 font-mono">{thread.post_count} POSTS</div>
                   </div>
@@ -199,19 +236,35 @@ export function NoticeboardView({
           <div className="space-y-4 mb-8">
             {posts.map((post) => {
               const authorId = post.author.replace('NODE_', '');
+              const onlineNode = allNodes.find(n => n.userId === authorId);
               const isNearby = nearbyUsers.some(u => u.userId === authorId);
               return (
                 <div key={post.id} className={`border ${isNearby ? 'border-[#00ff41] bg-[#00ff41]/5' : 'border-[#00ff41]/20'} p-4 relative`}>
                   <div className="flex flex-col mb-3 border-b border-[#00ff41]/10 pb-2 text-[10px] uppercase tracking-wider gap-1">
                     <div className="flex items-center justify-between">
-                      <div className={`flex items-center gap-2 ${isNearby ? 'text-[#00ff41] font-bold drop-shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'opacity-60'}`}>
-                        FROM: NODE_{authorId.slice(0,6)} 
-                        {isNearby && <Globe className="w-3 h-3 animate-pulse" />}
+                      <div className="flex items-center gap-3">
+                        <div className={`flex items-center gap-2 ${isNearby ? 'text-[#00ff41] font-bold drop-shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'opacity-60'}`}>
+                          <span className="text-[#00ff41] font-mono opacity-40 text-[8px]">{generateSigil(authorId)}</span>
+                          FROM: NODE_{authorId.slice(0,6)} 
+                          {isNearby && <Globe className="w-3 h-3 animate-pulse" />}
+                        </div>
+                        {onlineNode?.connectedAt && (
+                          <div className="opacity-30 flex items-center gap-1 text-[8px] bg-black/20 px-1 rounded">
+                            <Clock className="w-2 h-2" /> {formatUptime(onlineNode.connectedAt)}
+                          </div>
+                        )}
+                        {post.uptime_at_post !== undefined && (
+                          <div className="opacity-20 flex items-center gap-1 text-[8px]">
+                            <Hash className="w-2 h-2" /> POSTED_AT: {formatDuration(post.uptime_at_post)}
+                          </div>
+                        )}
                       </div>
                       <div className="opacity-40">{new Date(post.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                     </div>
                   </div>
-                  <div className="whitespace-pre-wrap leading-relaxed opacity-90 text-sm break-words">{post.content}</div>
+                  <div className="whitespace-pre-wrap leading-relaxed opacity-90 text-sm break-words transition-all duration-300 blur-sm hover:blur-none select-none">
+                    {post.content}
+                  </div>
                   <div className={`absolute left-0 top-0 bottom-0 w-1 ${isNearby ? 'bg-[#00ff41]' : 'bg-[#00ff41]/20'}`} />
                 </div>
               );
@@ -227,8 +280,15 @@ export function NoticeboardView({
                 onChange={(e) => setNewPostContent(e.target.value)}
                 className="w-full bg-black border border-[#00ff41]/30 p-4 h-32 focus:outline-none focus:border-[#00ff41] text-sm"
                 required
+                maxLength={500}
               />
-              <button type="submit" className="w-full bg-[#00ff41] text-black py-4 font-bold uppercase tracking-[0.2em] text-xs active:scale-95 shadow-[0_0_20px_rgba(0,255,65,0.2)]">Send_Reply</button>
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="w-full bg-[#00ff41] text-black py-4 font-bold uppercase tracking-[0.2em] text-xs active:scale-95 shadow-[0_0_20px_rgba(0,255,65,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'TRANSMITTING...' : 'Send_Reply'}
+              </button>
             </form>
           </div>
         </div>

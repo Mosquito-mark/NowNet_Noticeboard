@@ -22,6 +22,7 @@ db.exec(`
     title TEXT,
     author TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    uptime_at_post INTEGER,
     FOREIGN KEY(group_id) REFERENCES groups(id)
   );
 
@@ -31,6 +32,7 @@ db.exec(`
     author TEXT,
     content TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    uptime_at_post INTEGER,
     FOREIGN KEY(thread_id) REFERENCES threads(id)
   );
 `);
@@ -54,7 +56,8 @@ if (groupCount.count === 0) {
 
 async function startServer() {
   const app = express();
-  app.use(express.json());
+  // Protection 1: Strict Payload Size Limits
+  app.use(express.json({ limit: '5kb' })); 
   const httpServer = createServer(app);
   const io = new Server(httpServer, {
     cors: {
@@ -91,6 +94,100 @@ async function startServer() {
 
   scheduleDailyWipe();
 
+  // Protection 2: In-Memory Cooldown Tracker
+  const MAX_CONTENT_LENGTH = 500;
+  const MAX_TITLE_LENGTH = 150;
+  const MAX_CHAT_LENGTH = 200;
+
+  interface UserSession {
+    lastAction: number;
+    postTimestamps: number[];
+    tier2Active: boolean;
+    tier2TriggeredAt: number;
+    tier2PostCount: number;
+    connectedAt: number;
+  }
+  const userSessions = new Map<string, UserSession>();
+
+  function getSession(userId: string): UserSession {
+    let session = userSessions.get(userId);
+    if (!session) {
+      session = { 
+        lastAction: 0, 
+        postTimestamps: [], 
+        tier2Active: false, 
+        tier2TriggeredAt: 0, 
+        tier2PostCount: 0,
+        connectedAt: Date.now()
+      };
+      userSessions.set(userId, session);
+    }
+    return session;
+  }
+
+  function terminateNode(userId: string, io: Server) {
+    console.warn(`TERMINATING NODE_${userId} FOR SPAM VIOLATION`);
+    
+    // Remove all messages from BBS
+    db.prepare("DELETE FROM posts WHERE author = ? OR author LIKE ?").run(userId, `NODE_${userId}%`);
+    db.prepare("DELETE FROM threads WHERE author = ? OR author LIKE ?").run(userId, `NODE_${userId}%`);
+    
+    // Notify client and disconnect
+    io.emit("security_breach", { userId, reason: "PROTOCOL_VIOLATION: SPAM_FLOOD" });
+    
+    // Find all sockets for this user and disconnect them
+    const sockets = io.sockets.sockets;
+    for (const [id, socket] of sockets) {
+      if ((socket as any).userId === userId) {
+        socket.disconnect(true);
+      }
+    }
+    
+    userSessions.delete(userId);
+  }
+
+  function isThrottled(userId: string, io: Server) {
+    const now = Date.now();
+    const session = getSession(userId);
+
+    // Tier 1: 5s cooldown
+    const cooldown = session.tier2Active ? 60000 : 5000;
+    if (now - session.lastAction < cooldown) return true;
+
+    // Track post history for Tier 2
+    session.postTimestamps.push(now);
+    // Keep only last 60s of posts for Tier 2 check
+    session.postTimestamps = session.postTimestamps.filter(t => now - t < 60000);
+
+    // Check for Tier 2 trigger: > 10 posts in 1 minute
+    if (!session.tier2Active && session.postTimestamps.length > 10) {
+      session.tier2Active = true;
+      session.tier2TriggeredAt = now;
+      session.tier2PostCount = 0;
+      console.log(`NODE_${userId} entered Tier 2 throttling (60s cooldown)`);
+    }
+
+    // Tier 3 Check: 10 posts in < 15 mins after Tier 2 triggered
+    if (session.tier2Active) {
+      session.tier2PostCount++;
+      const timeSinceTier2 = now - session.tier2TriggeredAt;
+      
+      if (timeSinceTier2 < 15 * 60 * 1000 && session.tier2PostCount >= 10) {
+        terminateNode(userId, io);
+        return true;
+      }
+
+      // Reset Tier 2 if 15 mins passed without violation
+      if (timeSinceTier2 >= 15 * 60 * 1000) {
+        session.tier2Active = false;
+        session.tier2PostCount = 0;
+      }
+    }
+
+    session.lastAction = now;
+    return false;
+  }
+
   // BBS API Routes
   app.get("/api/groups", (req, res) => {
     const groups = db.prepare("SELECT * FROM groups").all();
@@ -115,19 +212,55 @@ async function startServer() {
 
   app.post("/api/groups/:id/threads", (req, res) => {
     const { title, author, content } = req.body;
-    const info = db.prepare("INSERT INTO threads (group_id, title, author) VALUES (?, ?, ?)").run(req.params.id, title, author);
-    db.prepare("INSERT INTO posts (thread_id, author, content) VALUES (?, ?, ?)").run(info.lastInsertRowid, author, content);
+    
+    // Protection 3: Server-side validation & Throttling
+    if (!title || !author || !content) return res.status(400).json({ error: "Missing fields" });
+    if (content.length > MAX_CONTENT_LENGTH || title.length > MAX_TITLE_LENGTH) {
+      return res.status(400).json({ error: "Content too long" });
+    }
+
+    // Dox-Check: Prevent IP address sharing
+    const ipRegex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
+    if (ipRegex.test(content) || ipRegex.test(title)) {
+      return res.status(400).json({ error: "SECURITY_ALERT: IP_ADDRESS_DETECTED. TRANSMISSION_BLOCKED." });
+    }
+
+    const userId = author.replace('NODE_', '');
+    if (isThrottled(userId, io)) return res.status(429).json({ error: "Transmission cooldown active" });
+
+    const session = getSession(userId);
+    const uptime = Math.floor((Date.now() - session.connectedAt) / 1000);
+
+    const info = db.prepare("INSERT INTO threads (group_id, title, author, uptime_at_post) VALUES (?, ?, ?, ?)").run(req.params.id, title, author, uptime);
+    db.prepare("INSERT INTO posts (thread_id, author, content, uptime_at_post) VALUES (?, ?, ?, ?)").run(info.lastInsertRowid, author, content, uptime);
     res.json({ id: info.lastInsertRowid });
   });
 
   app.post("/api/threads/:id/posts", (req, res) => {
     const { author, content } = req.body;
-    db.prepare("INSERT INTO posts (thread_id, author, content) VALUES (?, ?, ?)").run(req.params.id, author, content);
+
+    // Protection 3: Server-side validation & Throttling
+    if (!author || !content) return res.status(400).json({ error: "Missing fields" });
+    if (content.length > MAX_CONTENT_LENGTH) return res.status(400).json({ error: "Content too long" });
+
+    // Dox-Check: Prevent IP address sharing
+    const ipRegex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
+    if (ipRegex.test(content)) {
+      return res.status(400).json({ error: "SECURITY_ALERT: IP_ADDRESS_DETECTED. TRANSMISSION_BLOCKED." });
+    }
+
+    const userId = author.replace('NODE_', '');
+    if (isThrottled(userId, io)) return res.status(429).json({ error: "Transmission cooldown active" });
+
+    const session = getSession(userId);
+    const uptime = Math.floor((Date.now() - session.connectedAt) / 1000);
+
+    db.prepare("INSERT INTO posts (thread_id, author, content, uptime_at_post) VALUES (?, ?, ?, ?)").run(req.params.id, author, content, uptime);
     res.json({ success: true });
   });
 
   // Micronet Node Tracking
-  const micronetNodes = new Map<string, { userId: string; deviceName: string; handle?: string; signalStrength: number }>();
+  const micronetNodes = new Map<string, { userId: string; deviceName: string; handle?: string; signalStrength: number; connectedAt: number }>();
   const userSocketCounts = new Map<string, number>();
 
   function getSignalStrength(userId: string) {
@@ -143,10 +276,22 @@ async function startServer() {
     let socketUserId = "";
     let socketHandle = "";
 
+  // Protection 4: Socket Message Throttling & Privacy Guard
+    const socketLastMsg = new Map<string, number>();
+    const CHAT_COOLDOWN = 1000; // 1 second between chat messages
+
+    // Privacy Guard: Strip identifying info from socket object
+    (socket as any).handshake.address = "0.0.0.0";
+    (socket as any).handshake.headers['x-forwarded-for'] = undefined;
+    (socket as any).handshake.headers['x-real-ip'] = undefined;
+
     socket.on("join", (data: { room: string; isMicronet: boolean; deviceName?: string; userId?: string; handle?: string }) => {
       const { room, isMicronet, deviceName, userId, handle } = data;
       socketUserId = userId || Math.random().toString(36).substring(2, 8).toUpperCase();
+      (socket as any).userId = socketUserId;
       if (handle) socketHandle = handle;
+      
+      const session = getSession(socketUserId);
       
       // Track socket counts
       userSocketCounts.set(socketUserId, (userSocketCounts.get(socketUserId) || 0) + 1);
@@ -156,7 +301,13 @@ async function startServer() {
       const identity = isMicronet && deviceName ? deviceName : "UNANCHORED";
       
       if (isMicronet && deviceName) {
-        micronetNodes.set(socket.id, { userId: socketUserId, deviceName, handle: socketHandle, signalStrength: getSignalStrength(socketUserId) });
+        micronetNodes.set(socket.id, { 
+          userId: socketUserId, 
+          deviceName, 
+          handle: socketHandle, 
+          signalStrength: getSignalStrength(socketUserId),
+          connectedAt: session.connectedAt
+        });
         io.emit("micronet_node_update", Array.from(micronetNodes.values()));
       }
 
@@ -165,7 +316,8 @@ async function startServer() {
         userId: socketUserId, // Subject userId for filtering
         text: `NODE_${socketUserId} ${socketHandle ? `(${socketHandle})` : ''} [${identity}] has entered the terminal.`,
         timestamp: new Date().toISOString(),
-        type: "system"
+        type: "system",
+        connectedAt: session.connectedAt
       });
       
       socket.emit("identity_assigned", { userId: socketUserId });
@@ -182,11 +334,24 @@ async function startServer() {
     });
 
     socket.on("micronet_register", (data: { deviceName: string; handle?: string }) => {
-      micronetNodes.set(socket.id, { userId: socketUserId, deviceName: data.deviceName, handle: data.handle || socketHandle, signalStrength: getSignalStrength(socketUserId) });
+      const session = getSession(socketUserId);
+      micronetNodes.set(socket.id, { 
+        userId: socketUserId, 
+        deviceName: data.deviceName, 
+        handle: data.handle || socketHandle, 
+        signalStrength: getSignalStrength(socketUserId),
+        connectedAt: session.connectedAt
+      });
       io.emit("micronet_node_update", Array.from(micronetNodes.values()));
     });
 
     socket.on("whisper", (data: { toUserId: string; text: string }) => {
+      if (!data.text || data.text.length > MAX_CHAT_LENGTH) return;
+      
+      const now = Date.now();
+      if (now - (socketLastMsg.get('whisper') || 0) < CHAT_COOLDOWN) return;
+      socketLastMsg.set('whisper', now);
+
       const targetSocketId = Array.from(micronetNodes.entries())
         .find(([id, node]) => node.userId === data.toUserId)?.[0];
       
@@ -217,6 +382,27 @@ async function startServer() {
 
     socket.on("message", (data: { room: string; text: string; isMicronet?: boolean; deviceName?: string }) => {
       const { room, text, isMicronet, deviceName } = data;
+      if (!text || text.length > MAX_CHAT_LENGTH) return;
+
+      // Dox-Check: Prevent IP address sharing
+      const ipRegex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
+      if (ipRegex.test(text)) {
+        socket.emit("message", {
+          id: Date.now().toString(),
+          userId: "SYSTEM",
+          text: "SECURITY_ALERT: IP_ADDRESS_DETECTED. TRANSMISSION_BLOCKED_FOR_PRIVACY.",
+          timestamp: new Date().toISOString(),
+          type: "system"
+        });
+        return;
+      }
+
+      const now = Date.now();
+      if (now - (socketLastMsg.get('msg') || 0) < CHAT_COOLDOWN) return;
+      socketLastMsg.set('msg', now);
+
+      const session = getSession(socketUserId);
+
       io.to(room).emit("message", {
         id: Date.now().toString(),
         userId: socketUserId,
@@ -224,7 +410,8 @@ async function startServer() {
         text,
         timestamp: new Date().toISOString(),
         type: "user",
-        isMicronet
+        isMicronet,
+        connectedAt: session.connectedAt
       });
     });
 

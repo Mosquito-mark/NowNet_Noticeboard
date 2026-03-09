@@ -43,3 +43,24 @@ body {
 .terminal-glow {
   text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
 }
+
+/* Security: Blur content when window loses focus */
+html:not(:focus-within) body {
+  filter: blur(20px) grayscale(1);
+  transition: filter 0.3s ease;
+}
+
+html:not(:focus-within) body::after {
+  content: "SECURITY_LOCKOUT: INTERFACE_HIDDEN";
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.8);
+  font-size: 12px;
+  letter-spacing: 0.5em;
+  color: #00ff41;
+  pointer-events: none;
+}

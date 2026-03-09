@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { MessageSquare, Shield, Globe, Send, Radar } from 'lucide-react';
+import { MessageSquare, Shield, Globe, Send, Radar, Clock, Hash } from 'lucide-react';
 import { View, MicronetNode } from '../types';
+import { formatUptime } from '../utils/time';
+import { generateSigil } from '../utils/sigil';
 
 interface ChatViewProps {
   userId: string;
@@ -29,6 +31,21 @@ export function ChatView({
 }: ChatViewProps) {
   const [filterMicronet, setFilterMicronet] = useState(false);
   const [showPresence, setShowPresence] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 30000); // Update every 30s
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting || !chatInput.trim()) return;
+    setIsSubmitting(true);
+    onSendMessage(e);
+    setTimeout(() => setIsSubmitting(false), 1000);
+  };
 
   return (
     <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full w-full flex flex-col lg:flex-row gap-4 lg:gap-6 max-w-6xl mx-auto relative p-4 sm:p-6 overflow-hidden">
@@ -90,8 +107,14 @@ export function ChatView({
                   <div className="flex items-center gap-2 flex-wrap text-[10px] uppercase tracking-wider mb-1">
                     {msg.type === 'user' && (
                       <>
+                        <span className="text-[#00ff41] font-mono opacity-60">{generateSigil(msg.userId)}</span>
                         <span className={`font-bold ${isNearby ? 'text-[#00ff41]' : 'opacity-80'}`}>NODE_{msg.userId.slice(0,6)}</span>
                         <span className="opacity-30 text-[8px]">[{msg.deviceName}]</span>
+                        {msg.connectedAt && (
+                          <span className="opacity-40 text-[8px] flex items-center gap-1 bg-black/40 px-1 rounded">
+                            <Clock className="w-2 h-2" /> {formatUptime(msg.connectedAt)}
+                          </span>
+                        )}
                         {isNearby && <Globe className="w-3 h-3 text-[#00ff41]" />}
                         {msg.isMicronet && <Shield className="w-3 h-3 text-[#00ff41]" />}
                       </>
@@ -105,7 +128,9 @@ export function ChatView({
                       </>
                     )}
                   </div>
-                  <span className={`text-sm leading-relaxed ${isWhisper ? 'text-purple-200' : 'opacity-90'}`}>{msg.text}</span>
+                  <span className={`text-sm leading-relaxed transition-all duration-300 blur-sm hover:blur-none select-none ${isWhisper ? 'text-purple-200' : 'opacity-90'}`}>
+                    {msg.text}
+                  </span>
                 </div>
               );
             })}
@@ -116,7 +141,7 @@ export function ChatView({
           )}
         </div>
 
-        <form onSubmit={onSendMessage} className="flex flex-col gap-2 flex-shrink-0">
+        <form onSubmit={handleSend} className="flex flex-col gap-2 flex-shrink-0">
           {whisperTo && (
             <div className="flex items-center justify-between bg-purple-500/20 border border-purple-500/40 p-3 text-[10px] uppercase tracking-widest">
               <span>Whispering to: NODE_{whisperTo.userId.slice(0,6)}</span>
@@ -130,8 +155,13 @@ export function ChatView({
               onChange={(e) => setChatInput(e.target.value)}
               className="flex-1 bg-black border border-[#00ff41]/30 p-4 focus:outline-none focus:border-[#00ff41] text-sm"
               placeholder={whisperTo ? "PRIVATE_MESSAGE..." : "BROADCAST_MESSAGE..."}
+              maxLength={200}
             />
-            <button type="submit" className={`px-6 py-4 font-bold active:scale-95 transition-colors ${whisperTo ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-[#00ff41] text-black shadow-[0_0_15px_rgba(0,255,65,0.3)]'}`}>
+            <button 
+              type="submit" 
+              disabled={isSubmitting || !chatInput.trim()}
+              className={`px-6 py-4 font-bold active:scale-95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${whisperTo ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-[#00ff41] text-black shadow-[0_0_15px_rgba(0,255,65,0.3)]'}`}
+            >
               <Send className="w-5 h-5" />
             </button>
           </div>
@@ -181,11 +211,19 @@ export function ChatView({
                         <div className="w-1.5 h-1.5 border border-[#00ff41] rounded-full ml-1" />
                       )}
                       <div className="flex flex-col text-left">
-                        <span className={`text-xs uppercase tracking-tight ${isNearby ? 'font-bold text-[#00ff41]' : ''}`}>
-                          NODE_{node.userId.slice(0,6)}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#00ff41] font-mono opacity-40 text-[8px]">{generateSigil(node.userId)}</span>
+                          <span className={`text-xs uppercase tracking-tight ${isNearby ? 'font-bold text-[#00ff41]' : ''}`}>
+                            NODE_{node.userId.slice(0,6)}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[8px] opacity-40">{node.deviceName}</span>
+                          {node.connectedAt && (
+                            <span className="text-[8px] opacity-40 flex items-center gap-1 bg-black/20 px-1 rounded">
+                              <Clock className="w-2 h-2" /> {formatUptime(node.connectedAt)}
+                            </span>
+                          )}
                           {node.signalStrength && (
                             <span className="text-[8px] text-[#00ff41] opacity-60">[{node.signalStrength} dBm]</span>
                           )}
