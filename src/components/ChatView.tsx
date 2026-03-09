@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { MessageSquare, Shield, Globe, Send } from 'lucide-react';
-import { MicronetNode } from '../types';
+import { View, MicronetNode } from '../types';
 
 interface ChatViewProps {
   userId: string;
@@ -19,12 +19,13 @@ interface ChatViewProps {
   isScanning: boolean;
   nearbyUsers: MicronetNode[];
   allNodes: MicronetNode[];
+  setView: (v: View) => void;
 }
 
 export function ChatView({
   userId, chatMessages, chatInput, setChatInput, whisperTo, setWhisperTo,
   onSendMessage, isMicronetActive, micronetDevice, onPair, onClearAnchor,
-  onDiscovery, isScanning, nearbyUsers, allNodes
+  onDiscovery, isScanning, nearbyUsers, allNodes, setView
 }: ChatViewProps) {
   const [filterMicronet, setFilterMicronet] = useState(false);
   const [showPresence, setShowPresence] = useState(false);
@@ -65,6 +66,13 @@ export function ChatView({
               className={`text-[9px] sm:text-[10px] px-2 py-1.5 border transition-all uppercase tracking-wider ${filterMicronet ? 'bg-[#00ff41]/20 border-[#00ff41]' : 'border-[#00ff41]/20 opacity-50'}`}
             >
               {filterMicronet ? 'MICRONET_ONLY' : 'ALL_TRAFFIC'}
+            </button>
+            <div className="flex-1" />
+            <button 
+              onClick={() => setView('help')}
+              className="text-[9px] opacity-40 hover:opacity-100 underline uppercase tracking-widest"
+            >
+              How it works?
             </button>
           </div>
         </div>

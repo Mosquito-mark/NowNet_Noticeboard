@@ -128,16 +128,20 @@ async function startServer() {
 
   // Micronet Node Tracking
   const micronetNodes = new Map<string, { userId: string; deviceName: string; handle?: string }>();
+  const userSocketCounts = new Map<string, number>();
 
   // Socket.io logic
   io.on("connection", (socket) => {
-    let socketUserId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    let socketUserId = "";
     let socketHandle = "";
 
     socket.on("join", (data: { room: string; isMicronet: boolean; deviceName?: string; userId?: string; handle?: string }) => {
       const { room, isMicronet, deviceName, userId, handle } = data;
-      if (userId) socketUserId = userId;
+      socketUserId = userId || Math.random().toString(36).substring(2, 8).toUpperCase();
       if (handle) socketHandle = handle;
+      
+      // Track socket counts
+      userSocketCounts.set(socketUserId, (userSocketCounts.get(socketUserId) || 0) + 1);
       
       socket.join(room);
       
@@ -150,7 +154,7 @@ async function startServer() {
 
       socket.to(room).emit("message", {
         id: Date.now().toString(),
-        userId: "SYSTEM",
+        userId: socketUserId, // Subject userId for filtering
         text: `NODE_${socketUserId} ${socketHandle ? `(${socketHandle})` : ''} [${identity}] has entered the terminal.`,
         timestamp: new Date().toISOString(),
         type: "system"
@@ -217,10 +221,29 @@ async function startServer() {
     });
 
     socket.on("disconnect", () => {
+      if (!socketUserId) return;
+
       micronetNodes.delete(socket.id);
+      
+      const count = (userSocketCounts.get(socketUserId) || 0) - 1;
+      if (count <= 0) {
+        userSocketCounts.delete(socketUserId);
+        
+        // Notify all clients to remove messages from this ephemeral session
+        io.emit("clear_user_messages", { userId: socketUserId });
+        
+        socket.broadcast.emit("message", {
+          id: Date.now().toString(),
+          userId: socketUserId,
+          text: `NODE_${socketUserId} has left the terminal. Connection lost.`,
+          timestamp: new Date().toISOString(),
+          type: "system"
+        });
+      } else {
+        userSocketCounts.set(socketUserId, count);
+      }
+      
       io.emit("micronet_node_update", Array.from(micronetNodes.values()));
-      // Notify all clients to remove messages from this ephemeral session
-      io.emit("clear_user_messages", { userId: socketUserId });
     });
   });
 

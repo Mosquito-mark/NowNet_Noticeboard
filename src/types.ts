@@ -26,4 +26,4 @@ export interface MicronetNode {
   deviceName: string;
 }
 
-export type View = 'groups' | 'threads' | 'post' | 'chat';
+export type View = 'groups' | 'threads' | 'post' | 'chat' | 'help';

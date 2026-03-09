@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { BookOpen, MessageSquare } from 'lucide-react';
+import { BookOpen, MessageSquare, HelpCircle } from 'lucide-react';
 
 import { View, Group } from './types';
 import { useMicronet } from './hooks/useMicronet';
@@ -11,6 +11,7 @@ import { IdentityScreen } from './components/IdentityScreen';
 import { Header } from './components/Header';
 import { NoticeboardView } from './components/NoticeboardView';
 import { ChatView } from './components/ChatView';
+import { HelpView } from './components/HelpView';
 
 export default function App() {
   const [view, setView] = useState<View>('groups');
@@ -135,7 +136,12 @@ export default function App() {
               isScanning={micronet.isScanning}
               nearbyUsers={micronet.nearbyUsers}
               allNodes={micronet.allNodes}
+              setView={setView}
             />
+          )}
+
+          {view === 'help' && (
+            <HelpView />
           )}
         </AnimatePresence>
       </main>
@@ -156,6 +162,14 @@ export default function App() {
         >
           <MessageSquare className="w-6 h-6" />
           <span className="text-[9px] font-black uppercase tracking-widest">RELAY</span>
+        </button>
+        <div className="w-[2px] bg-[#00ff41]/20" />
+        <button 
+          onClick={() => setView('help')} 
+          className={`flex flex-col items-center justify-center gap-1 flex-1 transition-all active:scale-95 ${view === 'help' ? 'text-black bg-[#00ff41]' : 'text-[#00ff41]'}`}
+        >
+          <HelpCircle className="w-6 h-6" />
+          <span className="text-[9px] font-black uppercase tracking-widest">HELP</span>
         </button>
       </nav>
 

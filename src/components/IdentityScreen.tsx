@@ -16,15 +16,40 @@ export function IdentityScreen({ onJoin }: IdentityScreenProps) {
         className="w-full max-w-md border-2 border-[#00ff41] bg-[#0a0a0a] p-6 sm:p-8 shadow-[0_0_30px_rgba(0,255,65,0.2)]"
       >
         <pre className="hidden sm:block text-[8px] leading-[1] mb-6 text-[#00ff41] opacity-80 overflow-x-hidden">
-{`   _  _  ___  ___  _  _  ___  ____ 
-  | |/ /| __|/ __|| || || __||_  _|
-  | ' < | _| \\__ \\| || || _|   | |  
-  |_|\\_\\|___||___/ \\__/ |___|  |_|  
+{`  _  _  ___  _  _  _  _  ___  ____ 
+ | \| ||   || |/ \| \| || __||_  _|
+ |  \ || | | || \ / ||  \|| _|   | |  
+ |_|\_||___/  \_/ \_/|_|\_||___|  |_|  
                                     
   >> NETWORK ACCESS TERMINAL v2.0 <<`}
         </pre>
         <div className="sm:hidden text-center mb-6">
-          <h1 className="text-2xl font-bold tracking-[0.3em] text-[#00ff41]">NOWNET</h1>
+          <pre className="text-[10px] leading-[1.2] mb-4 text-[#00ff41] opacity-80 inline-block text-left">
+{`  _  _ 
+ | \| |
+ |  \ |
+ |_|\_|
+  ___ 
+ / _ \\
+| (_) |
+ \___/ 
+  _ _ _ 
+ | | | |
+ | | | |
+  \_/\_/ 
+  _  _ 
+ | \| |
+ |  \ |
+ |_|\_|
+  ___ 
+ | __|
+ | _| 
+ |___|
+  ____ 
+ |_  _|
+   | | 
+   |_| `}
+          </pre>
           <div className="text-[10px] opacity-60 mt-2">NETWORK ACCESS TERMINAL v2.0</div>
         </div>
         <form onSubmit={onJoin} className="space-y-8">

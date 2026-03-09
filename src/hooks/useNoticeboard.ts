@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Group, Thread, Post } from '../types';
+import { sanitizeContent } from '../utils/sanitizer';
 
 export function useNoticeboard() {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -28,10 +29,12 @@ export function useNoticeboard() {
   };
 
   const createThread = async (groupId: number, userId: string, title: string, content: string) => {
+    const sanitizedTitle = sanitizeContent(title);
+    const sanitizedContentText = sanitizeContent(content);
     const res = await fetch(`/api/groups/${groupId}/threads`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, author: `NODE_${userId}`, content })
+      body: JSON.stringify({ title: sanitizedTitle, author: `NODE_${userId}`, content: sanitizedContentText })
     });
     if (res.ok) {
       fetchThreads(groupId);
@@ -41,10 +44,11 @@ export function useNoticeboard() {
   };
 
   const createPost = async (threadId: number, userId: string, content: string) => {
+    const sanitizedContentText = sanitizeContent(content);
     const res = await fetch(`/api/threads/${threadId}/posts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ author: `NODE_${userId}`, content })
+      body: JSON.stringify({ author: `NODE_${userId}`, content: sanitizedContentText })
     });
     if (res.ok) {
       fetchPosts(threadId);

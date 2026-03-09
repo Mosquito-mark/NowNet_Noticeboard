@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, User } from 'lucide-react';
+import { Globe, User, HelpCircle } from 'lucide-react';
 import { View } from '../types';
 
 interface HeaderProps {
@@ -23,6 +23,7 @@ export function Header({ view, setView, userId, isMicronetActive, micronetDevice
           <nav className="flex gap-4 text-[10px] uppercase tracking-[0.2em] font-bold">
             <button onClick={() => setView('groups')} className={`px-3 py-1 border ${view === 'groups' || view === 'threads' || view === 'post' ? 'bg-[#00ff41] text-black border-[#00ff41]' : 'hover:bg-[#00ff41]/10 border-[#00ff41]/20'}`}>[1] BOARDS</button>
             <button onClick={() => setView('chat')} className={`px-3 py-1 border ${view === 'chat' ? 'bg-[#00ff41] text-black border-[#00ff41]' : 'hover:bg-[#00ff41]/10 border-[#00ff41]/20'}`}>[2] RELAY</button>
+            <button onClick={() => setView('help')} className={`px-3 py-1 border ${view === 'help' ? 'bg-[#00ff41] text-black border-[#00ff41]' : 'hover:bg-[#00ff41]/10 border-[#00ff41]/20'}`}>[3] HELP</button>
           </nav>
           <div className="h-4 w-[1px] bg-[#00ff41]/20" />
         </div>
