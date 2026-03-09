@@ -8,49 +8,56 @@ interface IdentityScreenProps {
 
 export function IdentityScreen({ onJoin }: IdentityScreenProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] p-4 relative overflow-y-auto">
       <div className="scanline" />
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md border-2 border-[#00ff41] bg-[#0a0a0a] p-6 sm:p-8 shadow-[0_0_30px_rgba(0,255,65,0.2)]"
       >
-        <pre className="hidden sm:block text-[8px] leading-[1] mb-6 text-[#00ff41] opacity-80 overflow-x-hidden">
-{`  _  _  ___  _  _  _  _  ___  ____ 
- | \| ||   || |/ \| \| || __||_  _|
- |  \ || | | || \ / ||  \|| _|   | |  
- |_|\_||___/  \_/ \_/|_|\_||___|  |_|  
-                                    
-  >> NETWORK ACCESS TERMINAL v2.0 <<`}
+        <pre className="hidden sm:block text-[7px] leading-[1.1] mb-8 text-[#00ff41] font-bold tracking-tighter overflow-x-hidden terminal-glow animate-pulse">
+{`  _   _  _____  _    _  _   _  _____  _____ 
+ | \\ | ||  _  || |  | || \\ | ||  ___||_   _|
+ |  \\| || | | || |  | ||  \\| || |__    | |  
+ | . \` || | | || |/\\| || . \` ||  __|   | |  
+ | |\\  |\\ \\_/ /\\  /\\  /| |\\  || |___   | |  
+ \\_| \\_/ \\___/  \\/  \\/ \\_| \\_/\\____/   \\_/  
+                                     
+      >> NETWORK ACCESS TERMINAL v2.0 <<`}
         </pre>
-        <div className="sm:hidden text-center mb-6">
-          <pre className="text-[10px] leading-[1.2] mb-4 text-[#00ff41] opacity-80 inline-block text-left">
-{`  _  _ 
- | \| |
- |  \ |
- |_|\_|
-  ___ 
- / _ \\
-| (_) |
- \___/ 
-  _ _ _ 
+        <div className="sm:hidden text-center mb-8">
+          <pre className="text-[10px] leading-[1.1] mb-4 text-[#00ff41] font-bold inline-block text-left terminal-glow animate-pulse">
+{`  _   _ 
+ | \\ | |
+ |  \\| |
+ | . \` |
+ |_| \\_|
+  _____ 
+ |  _  |
  | | | |
- | | | |
-  \_/\_/ 
-  _  _ 
- | \| |
- |  \ |
- |_|\_|
-  ___ 
- | __|
- | _| 
- |___|
-  ____ 
- |_  _|
-   | | 
-   |_| `}
+ | \\___/ 
+  _    _ 
+ | |  | |
+ | |/\\| |
+ |  /\\  |
+  \\/  \\/ 
+  _   _ 
+ | \\ | |
+ |  \\| |
+ | . \` |
+ |_| \\_|
+  _____ 
+ |  ___|
+ | |__  
+ |  __| 
+ | |___ 
+ \\____/ 
+  _____ 
+ |_   _|
+   | |  
+   |_|  `}
           </pre>
-          <div className="text-[10px] opacity-60 mt-2">NETWORK ACCESS TERMINAL v2.0</div>
+          <div className="text-[10px] opacity-60 mt-2 uppercase tracking-[0.2em]">NETWORK ACCESS TERMINAL v2.0</div>
         </div>
         <form onSubmit={onJoin} className="space-y-8">
           <div className="text-center space-y-4">

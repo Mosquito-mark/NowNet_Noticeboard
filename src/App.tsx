@@ -98,7 +98,7 @@ export default function App() {
         micronetDevice={micronet.micronetDevice} 
       />
 
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 z-10 pb-20 sm:pb-6">
+      <main className="flex-1 min-h-0 z-10 pb-20 sm:pb-0">
         <AnimatePresence mode="wait">
           {(view === 'groups' || view === 'threads' || view === 'post') && (
             <NoticeboardView 

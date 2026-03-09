@@ -31,10 +31,10 @@ export function ChatView({
   const [showPresence, setShowPresence] = useState(false);
 
   return (
-    <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto relative">
+    <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full flex flex-col lg:flex-row gap-4 lg:gap-6 max-w-6xl mx-auto relative p-4 sm:p-6 overflow-hidden">
       {/* Left Column: Chat */}
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex flex-col mb-4 border-b border-[#00ff41]/30 pb-3 gap-3">
+        <div className="flex flex-col mb-4 border-b border-[#00ff41]/30 pb-3 gap-3 flex-shrink-0">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold flex items-center gap-2 uppercase tracking-tight">
               <MessageSquare className="w-5 h-5" /> RELAY_STATION
@@ -77,7 +77,7 @@ export function ChatView({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto border border-[#00ff41]/20 p-3 mb-4 space-y-3 bg-black/30">
+        <div className="flex-1 overflow-y-auto border border-[#00ff41]/20 p-3 mb-4 space-y-3 bg-black/30 scrollbar-thin scrollbar-thumb-[#00ff41]/20">
           {chatMessages
             .filter(msg => !filterMicronet || msg.isMicronet || msg.type === 'system' || msg.type === 'whisper')
             .map((msg, i) => {
@@ -116,7 +116,7 @@ export function ChatView({
           )}
         </div>
 
-        <form onSubmit={onSendMessage} className="flex flex-col gap-2 mb-4">
+        <form onSubmit={onSendMessage} className="flex flex-col gap-2 mb-4 flex-shrink-0">
           {whisperTo && (
             <div className="flex items-center justify-between bg-purple-500/20 border border-purple-500/40 p-3 text-[10px] uppercase tracking-widest">
               <span>Whispering to: NODE_{whisperTo.userId.slice(0,6)}</span>
@@ -140,7 +140,7 @@ export function ChatView({
 
       {/* Right Column: User List / Radar */}
       <div className={`
-        fixed inset-0 z-40 bg-black/95 p-6 flex flex-col gap-6 transition-transform duration-300 lg:static lg:bg-transparent lg:p-0 lg:w-64 lg:translate-x-0
+        fixed inset-0 z-40 bg-black/95 p-6 flex flex-col gap-6 transition-transform duration-300 overflow-y-auto lg:static lg:bg-transparent lg:p-0 lg:w-64 lg:translate-x-0 lg:overflow-visible
         ${showPresence ? 'translate-x-0' : 'translate-x-full'}
       `}>
         <div className="flex items-center justify-between lg:hidden mb-4 border-b border-[#00ff41]/30 pb-4">
@@ -152,7 +152,7 @@ export function ChatView({
           <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 border-b border-[#00ff41]/20 pb-2 flex items-center justify-between">
             Nearby_Nodes <span className="bg-[#00ff41] text-black px-1 rounded-sm">{nearbyUsers.length}</span>
           </h3>
-          <div className="space-y-3 overflow-y-auto max-h-[40vh] lg:max-h-none">
+          <div className="space-y-3 overflow-y-auto lg:max-h-none">
             {nearbyUsers.length === 0 ? (
               <div className="text-[10px] opacity-40 italic leading-relaxed">No nodes detected in immediate vicinity. Use SCAN to discover local peers.</div>
             ) : (
@@ -181,7 +181,7 @@ export function ChatView({
 
         <div className="border border-[#00ff41]/10 p-4 bg-black/20 flex-1 lg:flex-none">
           <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 border-b border-[#00ff41]/10 pb-2">Network_Presence</h3>
-          <div className="space-y-2 overflow-y-auto max-h-[30vh] lg:max-h-64">
+          <div className="space-y-2 overflow-y-auto lg:max-h-64">
             {allNodes.filter(n => !nearbyUsers.some(nu => nu.userId === n.userId) && n.userId !== userId).map(node => (
               <button 
                 key={node.userId} 
