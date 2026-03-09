@@ -39,10 +39,17 @@ db.exec(`
 const groupCount = db.prepare("SELECT COUNT(*) as count FROM groups").get() as { count: number };
 if (groupCount.count === 0) {
   const insertGroup = db.prepare("INSERT INTO groups (name, description) VALUES (?, ?)");
-  insertGroup.run("alt.binaries.retro", "Discussion of vintage technology and software.");
-  insertGroup.run("comp.sys.terminal", "Terminal emulators and serial communication.");
-  insertGroup.run("sci.crypt.secure", "Cryptography and secure data exchange.");
-  insertGroup.run("misc.forsale.deck", "Cyberdeck parts and accessories.");
+  insertGroup.run("POST_NOW", "What's happening in this exact moment. Real-time updates.");
+  insertGroup.run("PLAN_SOON", "Upcoming plans, schedules, and coordination for the near future.");
+  insertGroup.run("RECALL_LATER", "Memories, recaps, and reflections on past experiences.");
+  insertGroup.run("DREAM_SOMEDAY", "Long-term goals, future ideas, and wishlists.");
+} else {
+  // Update existing groups if they have the old names
+  const updateGroup = db.prepare("UPDATE groups SET name = ?, description = ? WHERE id = ?");
+  updateGroup.run("POST_NOW", "What's happening in this exact moment. Real-time updates.", 1);
+  updateGroup.run("PLAN_SOON", "Upcoming plans, schedules, and coordination for the near future.", 2);
+  updateGroup.run("RECALL_LATER", "Memories, recaps, and reflections on past experiences.", 3);
+  updateGroup.run("DREAM_SOMEDAY", "Long-term goals, future ideas, and wishlists.", 4);
 }
 
 async function startServer() {
@@ -120,37 +127,70 @@ async function startServer() {
   });
 
   // Micronet Node Tracking
-  const micronetNodes = new Map<string, { userId: string; deviceName: string }>();
+  const micronetNodes = new Map<string, { userId: string; deviceName: string; handle?: string }>();
 
   // Socket.io logic
   io.on("connection", (socket) => {
-    const socketUserId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    let socketUserId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    let socketHandle = "";
 
-    socket.on("join", (data: { room: string; isMicronet: boolean; deviceName?: string }) => {
-      const { room, isMicronet, deviceName } = data;
+    socket.on("join", (data: { room: string; isMicronet: boolean; deviceName?: string; userId?: string; handle?: string }) => {
+      const { room, isMicronet, deviceName, userId, handle } = data;
+      if (userId) socketUserId = userId;
+      if (handle) socketHandle = handle;
+      
       socket.join(room);
       
       const identity = isMicronet && deviceName ? deviceName : "UNANCHORED";
       
       if (isMicronet && deviceName) {
-        micronetNodes.set(socket.id, { userId: socketUserId, deviceName });
+        micronetNodes.set(socket.id, { userId: socketUserId, deviceName, handle: socketHandle });
+        io.emit("micronet_node_update", Array.from(micronetNodes.values()));
       }
 
       socket.to(room).emit("message", {
         id: Date.now().toString(),
         userId: "SYSTEM",
-        text: `NODE_${socketUserId} [${identity}] has entered the terminal.`,
+        text: `NODE_${socketUserId} ${socketHandle ? `(${socketHandle})` : ''} [${identity}] has entered the terminal.`,
         timestamp: new Date().toISOString(),
         type: "system"
       });
       
-      // Send the assigned ID back to the user
       socket.emit("identity_assigned", { userId: socketUserId });
+      socket.emit("micronet_node_update", Array.from(micronetNodes.values()));
     });
 
-    socket.on("micronet_register", (data: { deviceName: string }) => {
-      micronetNodes.set(socket.id, { userId: socketUserId, deviceName: data.deviceName });
+    socket.on("update_handle", (data: { handle: string }) => {
+      socketHandle = data.handle;
+      const node = micronetNodes.get(socket.id);
+      if (node) {
+        node.handle = data.handle;
+        io.emit("micronet_node_update", Array.from(micronetNodes.values()));
+      }
+    });
+
+    socket.on("micronet_register", (data: { deviceName: string; handle?: string }) => {
+      micronetNodes.set(socket.id, { userId: socketUserId, deviceName: data.deviceName, handle: data.handle || socketHandle });
       io.emit("micronet_node_update", Array.from(micronetNodes.values()));
+    });
+
+    socket.on("whisper", (data: { toUserId: string; text: string }) => {
+      const targetSocketId = Array.from(micronetNodes.entries())
+        .find(([id, node]) => node.userId === data.toUserId)?.[0];
+      
+      if (targetSocketId) {
+        const msg = {
+          id: Date.now().toString(),
+          fromUserId: socketUserId,
+          fromHandle: socketHandle,
+          toUserId: data.toUserId,
+          text: data.text,
+          timestamp: new Date().toISOString(),
+          type: "whisper"
+        };
+        io.to(targetSocketId).emit("whisper", msg);
+        socket.emit("whisper", msg); // Echo back to sender
+      }
     });
 
     socket.on("micronet_lookup", (data: { deviceNames: string[] }, callback: (users: {userId: string, deviceName: string}[]) => void) => {
