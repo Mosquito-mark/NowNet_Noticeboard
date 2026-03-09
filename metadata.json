@@ -1,0 +1,5 @@
+{
+  "name": "Usenet to NowNet Noticeboard",
+  "description": "An old-fashioned Usenet-style bulletin board system with newsgroups, threaded discussions, and real-time relay.",
+  "requestFramePermissions": ["bluetooth"]
+}
