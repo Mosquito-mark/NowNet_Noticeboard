@@ -83,12 +83,19 @@ export default function App() {
   };
 
   if (!isJoined) {
-    return <IdentityScreen onJoin={handleJoin} />;
+    return (
+      <div className="min-h-[100dvh] w-full flex items-center justify-center bg-black p-4 sm:p-8">
+        <div className="w-[90dvw] h-[90dvh] flex flex-col bg-[#0a0a0a] text-[#00ff41] font-mono relative overflow-hidden border border-[#00ff41]/30 rounded-lg shadow-[0_0_30px_rgba(0,255,65,0.1)]">
+          <IdentityScreen onJoin={handleJoin} />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-[#0a0a0a] text-[#00ff41] font-mono relative overflow-hidden">
-      <div className="scanline" />
+    <div className="min-h-[100dvh] w-full flex items-center justify-center bg-black p-4 sm:p-8">
+      <div className="w-[90dvw] h-[90dvh] flex flex-col bg-[#0a0a0a] text-[#00ff41] font-mono relative overflow-hidden border border-[#00ff41]/30 rounded-lg shadow-[0_0_30px_rgba(0,255,65,0.1)]">
+        <div className="scanline" />
       
       <Header 
         view={view} 
@@ -147,7 +154,7 @@ export default function App() {
       </main>
 
       {/* Bottom Navigation - Mobile Only */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 border-t-2 border-[#00ff41] bg-black z-30 flex justify-around items-stretch h-16 shadow-[0_-4px_20px_rgba(0,255,65,0.15)]">
+      <nav className="sm:hidden absolute bottom-0 left-0 right-0 border-t-2 border-[#00ff41] bg-black z-30 flex justify-around items-stretch h-16 shadow-[0_-4px_20px_rgba(0,255,65,0.15)]">
         <button 
           onClick={() => setView('groups')} 
           className={`flex flex-col items-center justify-center gap-1 flex-1 transition-all active:scale-95 ${view === 'groups' || view === 'threads' || view === 'post' ? 'text-black bg-[#00ff41]' : 'text-[#00ff41]'}`}
@@ -178,6 +185,7 @@ export default function App() {
         <span>Encrypted: AES-256</span>
         <span>{new Date().toLocaleTimeString()}</span>
       </footer>
+      </div>
     </div>
   );
 }

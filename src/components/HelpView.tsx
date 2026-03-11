@@ -11,7 +11,7 @@ export function HelpView() {
       exit={{ opacity: 0, y: -10 }} 
       className="h-full w-full overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-[#00ff41]/20"
     >
-      <div className="max-w-2xl mx-auto space-y-8 pb-12">
+      <div className="w-full mx-auto space-y-8 pb-12">
       <div className="border-b border-[#00ff41]/30 pb-4">
         <h2 className="text-2xl font-bold flex items-center gap-3 uppercase tracking-tighter">
           <HelpCircle className="w-6 h-6 text-[#00ff41]" /> SYSTEM_MANUAL

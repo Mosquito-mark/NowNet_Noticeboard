@@ -8,7 +8,7 @@ interface IdentityScreenProps {
 
 export function IdentityScreen({ onJoin }: IdentityScreenProps) {
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-[#0a0a0a] p-4 relative overflow-y-auto">
+    <div className="h-full flex items-center justify-center bg-[#0a0a0a] p-4 relative overflow-y-auto">
       <div className="scanline" />
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}

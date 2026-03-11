@@ -71,7 +71,7 @@ export function NoticeboardView({
         exit={{ opacity: 0 }} 
         className="h-full w-full overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-[#00ff41]/20"
       >
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full mx-auto">
           <div className="flex items-center justify-between mb-6 border-b border-[#00ff41]/30 pb-2">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <BookOpen className="w-5 h-5" /> NOTICEBOARDS
@@ -109,7 +109,7 @@ export function NoticeboardView({
         exit={{ opacity: 0 }} 
         className="h-full w-full overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-[#00ff41]/20"
       >
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full mx-auto">
           <div className="flex flex-col mb-6 border-b border-[#00ff41]/30 pb-4 gap-4">
             <div className="flex items-center gap-3">
               <button onClick={() => setView('groups')} className="hover:bg-[#00ff41]/20 p-2 -ml-2 rounded-full transition-colors active:scale-90">
@@ -222,7 +222,7 @@ export function NoticeboardView({
         exit={{ opacity: 0 }} 
         className="h-full w-full overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-[#00ff41]/20"
       >
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full mx-auto">
           <div className="flex items-center gap-3 mb-6 border-b border-[#00ff41]/30 pb-4">
             <button onClick={() => setView('threads')} className="hover:bg-[#00ff41]/20 p-2 -ml-2 rounded-full transition-colors active:scale-90 flex-shrink-0">
               <ArrowLeft className="w-6 h-6" />

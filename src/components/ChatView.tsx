@@ -48,7 +48,7 @@ export function ChatView({
   };
 
   return (
-    <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full w-full flex flex-col lg:flex-row gap-4 lg:gap-6 max-w-6xl mx-auto relative p-4 sm:p-6 overflow-hidden">
+    <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full w-full flex flex-col lg:flex-row gap-4 lg:gap-6 mx-auto relative p-4 sm:p-6 overflow-hidden">
       {/* Left Column: Chat */}
       <div className="flex-1 flex flex-col min-h-0">
         <div className="flex flex-col mb-4 border-b border-[#00ff41]/30 pb-3 gap-3 flex-shrink-0">
@@ -178,11 +178,11 @@ export function ChatView({
           <button onClick={() => setShowPresence(false)} className="p-2 border border-[#00ff41] text-[#00ff41]">CLOSE</button>
         </div>
 
-        <div className="border border-[#00ff41]/30 p-4 bg-black/20 flex-1 lg:flex-none">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 border-b border-[#00ff41]/20 pb-2 flex items-center justify-between">
+        <div className="border border-[#00ff41]/30 p-4 bg-black/20 flex-1 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 border-b border-[#00ff41]/20 pb-2 flex items-center justify-between flex-shrink-0">
             Network_Presence <span className="bg-[#00ff41] text-black px-1 rounded-sm">{allNodes.filter(n => n.userId !== userId).length}</span>
           </h3>
-          <div className="space-y-2 overflow-y-auto lg:max-h-[calc(100vh-12rem)]">
+          <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
             {allNodes.filter(n => n.userId !== userId).length === 0 ? (
               <div className="text-[10px] opacity-40 italic leading-relaxed">No other nodes detected on the global relay.</div>
             ) : (
