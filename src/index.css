@@ -44,12 +44,7 @@ body {
   text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
 }
 
-/* Security: Blur content when window loses focus */
-html:not(:focus-within) body {
-  filter: blur(20px) grayscale(1);
-  transition: filter 0.3s ease;
-}
-
+/* Security: Hide content when window loses focus */
 html:not(:focus-within) body::after {
   content: "SECURITY_LOCKOUT: INTERFACE_HIDDEN";
   position: fixed;
