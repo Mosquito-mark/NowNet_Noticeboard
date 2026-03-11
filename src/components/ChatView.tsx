@@ -128,7 +128,7 @@ export function ChatView({
                       </>
                     )}
                   </div>
-                  <span className={`text-sm leading-relaxed transition-all duration-300 blur-sm hover:blur-none select-none ${isWhisper ? 'text-purple-200' : 'opacity-90'}`}>
+                  <span className={`text-sm leading-relaxed ${isWhisper ? 'text-purple-200' : 'opacity-90'}`}>
                     {msg.text}
                   </span>
                 </div>

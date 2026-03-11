@@ -6,15 +6,12 @@ import { View, Group } from './types';
 import { useMicronet } from './hooks/useMicronet';
 import { useChat } from './hooks/useChat';
 import { useNoticeboard } from './hooks/useNoticeboard';
-import { useSecurity } from './hooks/useSecurity';
 
 import { IdentityScreen } from './components/IdentityScreen';
 import { Header } from './components/Header';
 import { NoticeboardView } from './components/NoticeboardView';
 import { ChatView } from './components/ChatView';
 import { HelpView } from './components/HelpView';
-import { SecurityBreach } from './components/SecurityBreach';
-import { PrivacyCloak } from './components/PrivacyCloak';
 
 export default function App() {
   const [view, setView] = useState<View>('groups');
@@ -23,8 +20,6 @@ export default function App() {
   const [countdown, setCountdown] = useState<string>('');
   const [isMicronetActive, setIsMicronetActive] = useState(() => localStorage.getItem('nownet_micronetActive') === 'true');
   const [micronetDevice, setMicronetDevice] = useState<string | null>(() => localStorage.getItem('nownet_micronetDevice'));
-
-  const security = useSecurity();
 
   const {
     groups, threads, posts, selectedGroup, selectedThread,
@@ -40,12 +35,6 @@ export default function App() {
     isMicronetActive, setIsMicronetActive,
     micronetDevice, setMicronetDevice
   });
-
-  useEffect(() => {
-    if (security.isBreached && socket) {
-      socket.disconnect();
-    }
-  }, [security.isBreached, socket]);
 
   useEffect(() => {
     const updateCountdown = () => {
@@ -73,14 +62,8 @@ export default function App() {
         setUserId(data.userId);
         localStorage.setItem('nownet_userId', data.userId);
       });
-
-      socket.on('security_breach', (data: { userId: string, reason: string }) => {
-        if (data.userId === userId) {
-          security.triggerBreach();
-        }
-      });
     }
-  }, [socket, userId, security]);
+  }, [socket, userId]);
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,17 +82,12 @@ export default function App() {
     setView('post');
   };
 
-  if (security.isBreached) {
-    return <SecurityBreach />;
-  }
-
   if (!isJoined) {
     return <IdentityScreen onJoin={handleJoin} />;
   }
 
   return (
     <div className="h-[100dvh] flex flex-col bg-[#0a0a0a] text-[#00ff41] font-mono relative overflow-hidden">
-      <PrivacyCloak userId={userId} />
       <div className="scanline" />
       
       <Header 

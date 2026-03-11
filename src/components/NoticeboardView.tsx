@@ -262,7 +262,7 @@ export function NoticeboardView({
                       <div className="opacity-40">{new Date(post.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                     </div>
                   </div>
-                  <div className="whitespace-pre-wrap leading-relaxed opacity-90 text-sm break-words transition-all duration-300 blur-sm hover:blur-none select-none">
+                  <div className="whitespace-pre-wrap leading-relaxed opacity-90 text-sm break-words">
                     {post.content}
                   </div>
                   <div className={`absolute left-0 top-0 bottom-0 w-1 ${isNearby ? 'bg-[#00ff41]' : 'bg-[#00ff41]/20'}`} />
